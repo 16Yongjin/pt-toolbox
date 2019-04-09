@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>포르투갈어 도구</title>
+  <script src="http://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.min.js"></script>
+  <link href="/favicon.ico" rel="icon" type="image/x-icon" />
+  <style>
+    *,
+    html {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 100vh;
+    }
+
+    .change {
+      position: absolute;
+      margin-top: 75px;
+      left: 50%;
+      -webkit-transform: translateX(-50%);
+      -moz-transform: translateX(-50%);
+      transform: translateX(-50%);
+    }
+
+    textarea {
+      white-space: nowrap;
+      overflow: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="btn-floating change waves-effect waves-light orange" onclick="chnageTrans()">
+    <i class="material-icons">swap_horiz</i>
+  </a>
+
+  <div class="row trans" style="margin-bottom: 0">
+    <div class="col s6">
+      <div class="card">
+        <div class="card-content" style="padding: 12px">
+          <span class="card-title tran-input">영어</span>
+          <div class="input-field">
+            <textarea id="textarea1" placeholder="텍스트 입력" class="materialize-textarea" style="font-size: 1.5em;"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col s6">
+      <div class="card">
+        <div class="card-content" style="padding: 12px">
+          <span class="card-title tran-output">포르투갈어</span>
+          <a class="btn-floating halfway-fab waves-effect waves-light grey" onclick="copyTrans()">
+            <i class="material-icons">content_copy</i>
+          </a>
+          <div class="input-field">
+            <textarea readonly="readonly" id="textarea2" placeholder="번역" class="materialize-textarea" style="font-size: 1.5em; color: black;"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <iframe id="ptdic" src="https://dict.naver.com/ptkodict/?m=mobile#/main" align="left" frameborder="0"></iframe>
+  <iframe id="conj" src="http://cooljugator.com/pt/" onload="focusTextarea1();" align="left" frameborder="0"></iframe>
+  <script>
+
+    var pt = true
+    $(window).resize(iframeResize).resize()
+    $('#textarea1').bind('input propertychange', _.debounce(translate, 300))
+
+    if (!getIEVersion()) {
+      $('#conj').attr('src', 'http://pt.lento.in/')
+    }
+
+    function chnageTrans() {
+      pt = !pt
+      $('.tran-input').text(pt ? '영어' : '포르투갈어')
+      $('.tran-output').text(pt ? '포르투갈어' : '영어')
+      translate()
+    }
+
+    function copyTrans() {
+      $('#textarea2').select()
+      document.execCommand("Copy")
+    }
+
+    function blur() {
+      document.activeElement.blur()
+    }
+
+    function focus(id) {
+      document.getElementById(id).focus()
+    }
+
+    function focusTextarea1() {
+      focus('textarea1')
+    }
+
+    function iframeResize() {
+      $("iframe").each(function () {
+        var width = $(this).parent().width()
+        var transHeight = $('.trans').height()
+        var height = $(this).parent().height() - transHeight
+        $(this).width(width / 2 - 3).height(height)
+      })
+    }
+
+    function getIEVersion() {
+      var sAgent = window.navigator.userAgent
+      var Idx = sAgent.indexOf("MSIE")
+
+      if (Idx > 0)
+        return parseInt(sAgent.substring(Idx + 5, sAgent.indexOf(".", Idx)));
+      else if (!!navigator.userAgent.match(/Trident\/7\./))
+        return 11
+      else
+        return 0
+    }
+
+    function translate() {
+      var q = $('#textarea1').val()
+      if (!q) return
+      var target = pt ? 'pt' : 'en'
+      var request = $.ajax({
+        method: 'post',
+        url: 'https://translation.googleapis.com/language/translate/v2?key=AIzaSyD_PAaNlgzI8zCYrlzsfddFWAVdNA7hMhg',
+        data: {
+          q: q,
+          target: target,
+          model: 'nmt'
+        }
+      })
+
+      request.done(function (msg) {
+        $('#textarea2').val(msg.data.translations[0].translatedText.replace(/&#39;/g, '\''))
+      })
+    }
+
+  </script>
+</body>
+
+</html>
